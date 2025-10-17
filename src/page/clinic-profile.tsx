@@ -1,13 +1,15 @@
+/* eslint-disable */
 "use client"
 
 import { useEffect, useState } from "react"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
-import { MapPin, Building2, MessageSquare, Copy } from "lucide-react"
+import { MapPin, Building2, MessageSquare, Copy, Info } from "lucide-react"
 import { Card } from "../components/ui/card"
 import { ReviewsSection } from "./reviews-section"
 import { AppointmentsSection } from "../components/appointments-section"
 import { useClinicStore } from "../store/clinic-store"
+import { INSURANCE_OPTIONS, insuranceImages } from "../store/insurance_option"
 
 export function ClinicProfile() {
   const { clinicData, isLoading, error, fetchClinicData } = useClinicStore()
@@ -37,9 +39,7 @@ export function ClinicProfile() {
     )
   }
 
-  if (!clinicData) {
-    return null
-  }
+  if (!clinicData) return null
 
   const bioText =
     clinicData.bio ||
@@ -51,6 +51,33 @@ export function ClinicProfile() {
     navigator.clipboard.writeText(code)
   }
 
+  // ✅ Updated: handles both numeric IDs and string names
+  const getInsuranceDetails = (insurance: number | string) => {
+    let matched
+
+    if (typeof insurance === "number") {
+      matched = INSURANCE_OPTIONS.find((opt) => opt.id === insurance)
+    } else if (typeof insurance === "string") {
+      matched = INSURANCE_OPTIONS.find(
+        (opt) => opt.name.toLowerCase() === insurance.toLowerCase()
+      )
+    }
+
+    if (!matched) {
+      return {
+        name: "Unknown",
+        subText: "",
+        logo: null,
+      }
+    }
+
+    return {
+      name: matched.name,
+      subText: matched.subText,
+      logo: insuranceImages[matched.name as keyof typeof insuranceImages] || null,
+    }
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Header Section */}
@@ -58,13 +85,15 @@ export function ClinicProfile() {
         <Avatar className="h-24 w-24 sm:h-32 sm:w-32">
           <AvatarImage src={clinicData.avatar || "/placeholder.svg"} alt={clinicData.clinicName} />
           <AvatarFallback className="bg-[#FBAE24] text-2xl text-white sm:text-3xl">
-            {clinicData.clinicName.substring(0, 2).toUpperCase()}
+            {clinicData.clinicName?.substring(0, 2).toUpperCase() || "CL"}
           </AvatarFallback>
         </Avatar>
 
-        <h1 className="mt-4 font-bold text-2xl text-foreground sm:text-3xl">{clinicData.clinicName}</h1>
+        <h1 className="mt-4 font-bold text-2xl text-foreground sm:text-3xl">
+          {clinicData.clinicName}
+        </h1>
 
-        <p className="mt-1 text-sm text-muted-foreground">@{clinicData.username || "king_faical"}</p>
+        <p className="mt-1 text-sm text-muted-foreground">@{clinicData.username || "clinic_user"}</p>
 
         <Badge
           className={`mt-3 px-6 py-1 text-sm font-medium rounded-full ${
@@ -77,6 +106,7 @@ export function ClinicProfile() {
         </Badge>
       </div>
 
+      {/* Address Section */}
       <Card className="mb-4 p-4 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="rounded-full bg-[#FBAE24]/10 p-2 flex-shrink-0">
@@ -85,8 +115,8 @@ export function ClinicProfile() {
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-1">Address</h3>
             <p className="text-sm text-muted-foreground">
-              {clinicData.location.street}, {clinicData.location.cityOrDistrict}, {clinicData.location.stateOrProvince},{" "}
-              {clinicData.country}
+              {clinicData.location?.street}, {clinicData.location?.cityOrDistrict},{" "}
+              {clinicData.location?.stateOrProvince}, {clinicData.country}
             </p>
           </div>
         </div>
@@ -124,22 +154,30 @@ export function ClinicProfile() {
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-3">Languages Spoken</h3>
             <div className="flex flex-wrap gap-2">
-              {(clinicData.languages.length > 0 ? clinicData.languages : ["English", "French", "Kinyarwanda"]).map(
-                (language, index) => (
-                  <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-100">
-                    {language}
-                  </Badge>
-                ),
-              )}
+              {(clinicData.languages?.length > 0
+                ? clinicData.languages
+                : ["English", "French", "Kinyarwanda"]
+              ).map((language: string, index: number) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="bg-gray-100 text-gray-700 hover:bg-gray-100"
+                >
+                  {language
+                    ? language.charAt(0).toUpperCase() + language.slice(1).toLowerCase()
+                    : ""}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
       </Card>
 
+      {/* About Section */}
       <Card className="mb-4 p-4 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="rounded-full bg-[#FBAE24]/10 p-2 flex-shrink-0">
-            <MessageSquare className="h-5 w-5 text-[#FBAE24]" />
+            <Info className="h-5 w-5 text-[#FBAE24]" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-2">About</h3>
@@ -156,40 +194,61 @@ export function ClinicProfile() {
         </div>
       </Card>
 
-      {/* Supported Insurance Section */}
+      {/* ✅ Supported Insurance Section */}
       <div className="mb-12">
-        <h2 className="font-bold text-[18px] sm:text-[20px] mb-4 text-center">Supported Insurance</h2>
-        <div className="flex justify-center gap-6 sm:gap-8 flex-wrap">
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-blue-50 flex items-center justify-center mb-2">
-              <span className="text-xl sm:text-2xl font-bold text-blue-600">RS</span>
-            </div>
-            <span className="text-sm font-medium">RSSB</span>
+        <h2 className="font-bold text-[18px] sm:text-[20px] mb-4 text-center">
+          Supported Insurance
+        </h2>
+
+        {clinicData.supportInsurance && clinicData.supportInsurance.length > 0 ? (
+          <div className="flex justify-center gap-6 sm:gap-8 flex-wrap">
+            {clinicData.supportInsurance.map((insurance: any, index: number) => {
+              const { name, subText, logo } = getInsuranceDetails(insurance)
+
+              return (
+                <div key={index} className="flex flex-col items-center text-center w-28">
+                  {logo ? (
+                    <img
+                      src={logo}
+                      alt={name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-contain mb-2 rounded-lg bg-gray-50 p-2"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-gray-50 flex items-center justify-center mb-2">
+                      <span className="text-xl sm:text-2xl font-bold text-gray-700">
+                        {name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-gray-800">
+                    {name.replace(/_/g, " ")}
+                  </span>
+                  {subText && <span className="text-xs text-gray-500">{subText}</span>}
+                </div>
+              )
+            })}
           </div>
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-blue-50 flex items-center justify-center mb-2">
-              <span className="text-base sm:text-xl font-bold text-blue-600">Britam</span>
-            </div>
-            <span className="text-sm font-medium">Britam</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-orange-50 flex items-center justify-center mb-2">
-              <span className="text-xl sm:text-2xl font-bold text-orange-600">M</span>
-            </div>
-            <span className="text-sm font-medium">MUA</span>
-          </div>
-        </div>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            No supported insurance listed.
+          </p>
+        )}
       </div>
 
+      {/* Active Discount Codes */}
       <div className="mb-12">
-        <h2 className="font-bold text-[18px] text-center sm:text-left sm:text-[20px] mb-4">Active Discount Codes</h2>
+        <h2 className="font-bold text-[18px] text-center sm:text-left sm:text-[20px] mb-4">
+          Active Discount Codes
+        </h2>
         <div className="bg-green-50/50 rounded-2xl p-4 space-y-3 border border-green-100">
           <Card className="p-4 bg-white border-green-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-foreground">HEALTH20</span>
-                  <Badge className="bg-green-500 text-white text-xs hover:bg-green-500">10% off</Badge>
+                  <Badge className="bg-green-500 text-white text-xs hover:bg-green-500">
+                    10% off
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">Valid until Sep 3</p>
               </div>
@@ -201,12 +260,15 @@ export function ClinicProfile() {
               </button>
             </div>
           </Card>
+
           <Card className="p-4 bg-white border-green-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-foreground">FAICALI5</span>
-                  <Badge className="bg-green-500 text-white text-xs hover:bg-green-500">10% off</Badge>
+                  <Badge className="bg-green-500 text-white text-xs hover:bg-green-500">
+                    10% off
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">Valid until Aug 30</p>
               </div>

@@ -55,7 +55,7 @@ export function AppDownloadDialog({ open, onOpenChange }: AppDownloadDialogProps
             <Star className="h-4 w-4 fill-[#FBAE24] text-[#FBAE24]" />
             {/* </CHANGE> */}
             <span className="font-semibold">4.9 rating</span>
-            <span className="text-muted-foreground">.50K+ downloads</span>
+            <span className="text-muted-foreground">50K+ downloads</span>
           </div>
         </div>
       </DialogContent>
