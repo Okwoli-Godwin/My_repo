@@ -74,7 +74,7 @@ export const useClinicStore = create<ClinicStore>((set) => ({
   fetchClinicData: async () => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch("https://clinic-backend.mylifeline.world/api/v1/clinic/public/med_plus")
+      const response = await fetch("https://clinic-backend.mylifeline.world/api/v1/clinic/public/med_plus_clinic")
       if (!response.ok) {
         throw new Error("Failed to fetch clinic data")
       }
